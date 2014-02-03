@@ -52,24 +52,6 @@ type Playfield(list:int, ?width: int, ?height: int) =
         | (x,y) when field.[x,y] = space.Occupied -> space.Occupied
         | _ -> space.Empty
 
-//    let updateBoard x y =
-//        field.[x, y] <- space.Occupied
-//
-//        let slice = field.[0..width-1, y]
-//
-//        if slice |> Array.forall (fun x -> x = space.Occupied) then 
-//            let top = field.[0..width-1, 0..y-1] //cut the top half (without the completed row)
-//            let bottom = field.[0..width-1, y+1..height-1] //cut the second half (without the completed row)
-//            let f = Array2D.zeroCreate<space> width height //create new array
-//            
-//            if top.Length > 0 then
-//                Array2D.blit top 0 0 f 0 1 (Array2D.length1 top) (Array2D.length2 top) //merge the top half one row down
-//
-//            if bottom.Length > 0 then
-//                Array2D.blit bottom 0 0 f 0 (y+1) (Array2D.length1 bottom) (Array2D.length2 bottom) //merge the bottom half in place
-//
-//            field <- f
-
     let rec updateBoard y slices =
         match y with
         | [] -> slices

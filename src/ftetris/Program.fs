@@ -54,8 +54,8 @@ type GLWindow() as this =
             | space.Occupied -> if (key <> Key.Left && key <> Key.Right) then
 
                                     playfield.SavePosition tetronimo //handle a normal collision
-
-                                    let y = tetronimo.Shape |> Array2D.length1 |> fun size -> Array.init size (fun i -> i + tetronimo.Y) |> Seq.toList
+                
+                                    let y = tetronimo.Shape |> Array2D.length1 |> fun size -> Array.init size (fun i -> i + tetronimo.Y) |> Array.filter (fun x -> x < 20) |> Seq.toList
                                     let clearedRow = playfield.Update y
 
                                     tetronimo <- factory.Create //create a new tetrino
