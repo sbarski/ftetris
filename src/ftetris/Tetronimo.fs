@@ -81,7 +81,7 @@ type Tetronimo(name: string, shape: int[,], ?color: Color, ?x: int, ?y: int, ?sp
         GL.Vertex2(x + 1, y + 1)
         GL.Vertex2(x + 1, y)
 
-    member this.Draw() =
+    member this.Draw =
         GL.Color3(color);
         GL.Begin(PrimitiveType.Quads)
         shape |> Array2D.iteri (fun row column elem -> if elem = 1 then draw column row)

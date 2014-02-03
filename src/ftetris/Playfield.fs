@@ -52,23 +52,52 @@ type Playfield(list:int, ?width: int, ?height: int) =
         | (x,y) when field.[x,y] = space.Occupied -> space.Occupied
         | _ -> space.Empty
 
-    let updateBoard x y =
-        field.[x, y] <- space.Occupied
+//    let updateBoard x y =
+//        field.[x, y] <- space.Occupied
+//
+//        let slice = field.[0..width-1, y]
+//
+//        if slice |> Array.forall (fun x -> x = space.Occupied) then 
+//            let top = field.[0..width-1, 0..y-1] //cut the top half (without the completed row)
+//            let bottom = field.[0..width-1, y+1..height-1] //cut the second half (without the completed row)
+//            let f = Array2D.zeroCreate<space> width height //create new array
+//            
+//            if top.Length > 0 then
+//                Array2D.blit top 0 0 f 0 1 (Array2D.length1 top) (Array2D.length2 top) //merge the top half one row down
+//
+//            if bottom.Length > 0 then
+//                Array2D.blit bottom 0 0 f 0 (y+1) (Array2D.length1 bottom) (Array2D.length2 bottom) //merge the bottom half in place
+//
+//            field <- f
 
-        let slice = field.[0..width-1, y]
+    let rec updateBoard y slices =
+        match y with
+        | [] -> slices
+        | head :: tail -> 
+            let slice = field.[0..width-1, head]
 
-        if slice |> Array.forall (fun x -> x = space.Occupied) then 
-            let top = field.[0..width-1, 0..y-1] //cut the top half (without the completed row)
-            let bottom = field.[0..width-1, y+1..height-1] //cut the second half (without the completed row)
-            let f = Array2D.zeroCreate<space> width height //create new array
+            if slice |> Array.forall (fun x -> x = space.Occupied) then 
+                let top = field.[0..width-1, 0..head-1] //cut the top half (without the completed row)
+                let bottom = field.[0..width-1, head+1..height-1] //cut the second half (without the completed row)
+                let f = Array2D.zeroCreate<space> width height //create new array
             
-            if top.Length > 0 then
-                Array2D.blit top 0 0 f 0 1 (Array2D.length1 top) (Array2D.length2 top) //merge the top half one row down
+                if top.Length > 0 then
+                    Array2D.blit top 0 0 f 0 1 (Array2D.length1 top) (Array2D.length2 top) //merge the top half one row down
 
-            if bottom.Length > 0 then
-                Array2D.blit bottom 0 0 f 0 (y+1) (Array2D.length1 bottom) (Array2D.length2 bottom) //merge the bottom half in place
+                if bottom.Length > 0 then
+                    Array2D.blit bottom 0 0 f 0 (head+1) (Array2D.length1 bottom) (Array2D.length2 bottom) //merge the bottom half in place
 
-            field <- f
+                field <- f
+
+                let score = slices + 1
+                updateBoard tail score
+            else
+                let score = slices
+                updateBoard tail score
+
+    member x.Update y =
+        let result = updateBoard y 0
+        result
 
     member x.Draw = 
         field |> Array2D.iteri (fun x y e -> if e = space.Occupied then drawPolygon x y)
@@ -89,7 +118,8 @@ type Playfield(list:int, ?width: int, ?height: int) =
         (position, t)                           
 
     member x.SavePosition (t:Tetronimo) =
-        t.Shape |> Array2D.iteri (fun x y e -> if e = 1 then updateBoard (y + t.X) (x + t.Y))
+        t.Shape |> Array2D.iteri (fun x y e -> if e = 1 then field.[y + t.X, x + t.Y] <- space.Occupied)
+        //t.Shape |> Array2D.iteri (fun x y e -> if e = 1 then updateBoard (y + t.X) (x + t.Y))
 
     member x.Restart =
         field <- Array2D.zeroCreate<space> width height

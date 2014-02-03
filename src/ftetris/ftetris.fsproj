@@ -54,6 +54,7 @@
   <ItemGroup>
     <Compile Include="Tetronimo.fs" />
     <Compile Include="Playfield.fs" />
+    <Compile Include="TextWriter.fs" />
     <Compile Include="Program.fs" />
     <None Include="App.config" />
     <None Include="packages.config" />

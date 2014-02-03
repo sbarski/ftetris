@@ -18,8 +18,12 @@ type GLWindow() as this =
     let gridList = 1
     let playfield = new Playfield(gridList)
     let factory = new TetronimoFactory(defaultx, defaulty)
+
     let mutable tetronimo = factory.Create
     let mutable elapsedTime = 0.0
+    let mutable score = 0
+
+    let (display, attributes) = TextWriter.init this.Size (new Size(this.Width, 30)) "Score: 0" Brushes.White  
 
     let resize(e: EventArgs) = 
         GL.Viewport(0, 0, this.Width, this.Height)
@@ -48,8 +52,17 @@ type GLWindow() as this =
             match result with
             | space.Empty -> saveMove newtetromino //if empty then save
             | space.Occupied -> if (key <> Key.Left && key <> Key.Right) then
-                                    do playfield.SavePosition tetronimo //handle a normal collision
-                                    do tetronimo <- factory.Create 
+
+                                    playfield.SavePosition tetronimo //handle a normal collision
+
+                                    let y = tetronimo.Shape |> Array2D.length1 |> fun size -> Array.init size (fun i -> i + tetronimo.Y) |> Seq.toList
+                                    let clearedRow = playfield.Update y
+
+                                    tetronimo <- factory.Create //create a new tetrino
+                                    score <- score + clearedRow //increment score
+
+                                    TextWriter.update display attributes ("Score " + score.ToString()) |> ignore
+
             | space.Filled ->   do playfield.Restart //handle occupied board
                                 do tetronimo <- factory.Create
             | space.Wall -> ()  //do nothing and continue
@@ -64,8 +77,11 @@ type GLWindow() as this =
     let renderFrame(e: FrameEventArgs) =
         GL.Clear(ClearBufferMask.ColorBufferBit ||| ClearBufferMask.DepthBufferBit)
         GL.ClearColor(Color4.Black)
-        tetronimo.Draw()
+        tetronimo.Draw
         playfield.Draw
+
+        TextWriter.draw display attributes this.Width this.Height
+
         this.SwapBuffers()
 
     let updateFrame(e: FrameEventArgs) = 
