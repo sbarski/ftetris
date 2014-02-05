@@ -11,15 +11,17 @@ open Tetronimo
 
 let defaultx = 4
 let defaulty = 0
+let width = 10
+let height = 20
 
 type GLWindow() as this = 
     inherit GameWindow(600, 800, GraphicsMode.Default)
 
     let gridList = 1
-    let playfield = new Playfield(gridList)
-    let factory = new TetronimoFactory(defaultx, defaulty)
+    let random = new Random()
 
-    let mutable tetronimo = factory.Create
+    let mutable playfield = Playfield.init gridList width height
+    let mutable tetronimo = Tetronimo.create random
     let mutable elapsedTime = 0.0
     let mutable score = 0
 
@@ -37,36 +39,39 @@ type GLWindow() as this =
     let load(e: EventArgs) = 
         this.VSync <- VSyncMode.On
 
-    let nextTetronimo =
-        tetronimo <- factory.Create
-        ()
+    let updateGameState update =
+        if (fst update <> playfield) then
+            playfield <- fst update
 
-    let saveMove t =
-        tetronimo <- t
-        ()
+        score <- score + snd update
+        tetronimo <- Tetronimo.create random
 
-    let moveTetronimo key =
-        factory.AttemptMove key tetronimo
-        |> playfield.GetNextPosition 
-        |> (fun (result, newtetromino) -> 
-            match result with
-            | space.Empty -> saveMove newtetromino //if empty then save
-            | space.Occupied -> if (key <> Key.Left && key <> Key.Right) then
+        TextWriter.update display attributes ("Score " + score.ToString())
 
-                                    playfield.SavePosition tetronimo //handle a normal collision
+    let handleCollision key =
+        if (key <> Key.Left && key <> Key.Right) then
+
+            Playfield.savePosition tetronimo playfield //handle a normal collision
                 
-                                    let y = tetronimo.Shape |> Array2D.length1 |> fun size -> Array.init size (fun i -> i + tetronimo.Y) |> Array.filter (fun x -> x < 20) |> Seq.toList
-                                    let clearedRow = playfield.Update y
+            let y = tetronimo.shape |> Array2D.length1 |> fun size -> Array.init size (fun i -> i + tetronimo.y) |> Array.filter (fun x -> x < 20) |> Seq.toList
+            let update = Playfield.update playfield y
+            
+            updateGameState update
 
-                                    tetronimo <- factory.Create //create a new tetrino
-                                    score <- score + clearedRow //increment score
-
-                                    TextWriter.update display attributes ("Score " + score.ToString()) |> ignore
-
-            | space.Filled ->   do playfield.Restart //handle occupied board
-                                do tetronimo <- factory.Create
-            | space.Wall -> ()  //do nothing and continue
-            | _ -> ())
+    let restartGame message =
+        playfield <- Playfield.restart playfield
+        tetronimo <- Tetronimo.create random
+        score <- 0
+        
+    let moveTetronimo key =
+        let move = Tetronimo.move key tetronimo |> Playfield.getNextPosition playfield
+        
+        match move with
+        | (space.Empty, position) -> tetronimo <- position
+        | (space.Occupied, _) -> handleCollision key
+        | (space.Filled, _) -> restartGame ""
+        | (space.Wall, _) -> ()  //do nothing and continue
+        | _ -> () //handle impossible case
 
     let keyDown(e: KeyboardKeyEventArgs) = 
         match e.Key with
@@ -77,9 +82,9 @@ type GLWindow() as this =
     let renderFrame(e: FrameEventArgs) =
         GL.Clear(ClearBufferMask.ColorBufferBit ||| ClearBufferMask.DepthBufferBit)
         GL.ClearColor(Color4.Black)
-        tetronimo.Draw
-        playfield.Draw
 
+        Tetronimo.draw tetronimo
+        Playfield.draw playfield
         TextWriter.draw display attributes this.Width this.Height
 
         this.SwapBuffers()
@@ -87,7 +92,7 @@ type GLWindow() as this =
     let updateFrame(e: FrameEventArgs) = 
         elapsedTime <- elapsedTime + e.Time
 
-        if elapsedTime >= tetronimo.Speed then 
+        if elapsedTime >= tetronimo.speed then 
             moveTetronimo Key.Down
             elapsedTime <- 0.0
 

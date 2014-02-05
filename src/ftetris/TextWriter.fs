@@ -41,7 +41,7 @@ let private refresh display attributes =
 
 let update display attributes text = 
     let display = {text = text; bitmap = display.bitmap}
-    refresh display attributes
+    refresh display attributes |> ignore
 
 let init (clientSize:Size) (areaSize:Size) text colour =
     let bitmap = new Bitmap(areaSize.Width, areaSize.Height)
