@@ -101,7 +101,6 @@ type Playfield(list:int, ?width: int, ?height: int) =
 
     member x.SavePosition (t:Tetronimo) =
         t.Shape |> Array2D.iteri (fun x y e -> if e = 1 then field.[y + t.X, x + t.Y] <- space.Occupied)
-        //t.Shape |> Array2D.iteri (fun x y e -> if e = 1 then updateBoard (y + t.X) (x + t.Y))
 
     member x.Restart =
         field <- Array2D.zeroCreate<space> width height
