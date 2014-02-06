@@ -85,10 +85,10 @@ type GLWindow() as this =
         GL.Clear(ClearBufferMask.ColorBufferBit ||| ClearBufferMask.DepthBufferBit)
         GL.ClearColor(Color4.Black)
 
-        Menu.draw width height Menu.Speed
-//        Tetronimo.draw tetronimo
-//        Playfield.draw playfield
-//        TextWriter.draw display attributes this.Width this.Height
+        //Menu.draw width height Menu.Speed
+        Tetronimo.draw tetronimo
+        Playfield.draw playfield
+        TextWriter.draw display attributes this.Width this.Height
 
         this.SwapBuffers()
 
