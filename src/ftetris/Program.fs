@@ -33,7 +33,7 @@ type GLWindow() as this =
     let mutable elapsedTimeSecond = 0.0
     let mutable score = 0
     let mutable gameState = Game.Run
-    let mutable gameType = Game.Single
+    let mutable gameType = Game.AI
 
     let (display, attributes) = TextWriter.init this.Size (new Size(this.Width, 30)) "Score: 0" Brushes.White  
 
@@ -84,15 +84,21 @@ type GLWindow() as this =
         | _ -> () //handle impossible case
 
     let keyDown(e: KeyboardKeyEventArgs) = 
-        let key = Game.keyToCommand e.Key
+        let key = Game.keyToCommand gameType e.Key
 
         match e.Key with
         | Key.Escape -> match gameState with
                         | Game.Run -> gameState <- Game.Pause
                         | Game.Pause -> gameState <- Game.Run
                         | _ -> ()
-        | Key.A | Key.D | Key.W | Key.S | Key.X -> if gameState = Game.Run then moveTetronimo tetronimo_first playfield_first key
-        | Key.Down | Key.Left | Key.Right | Key.Up | Key.Space -> if gameState = Game.Run then moveTetronimo tetronimo_second playfield_second key
+        | Key.A | Key.D | Key.W | Key.S | Key.X -> 
+                        if gameState = Game.Run then moveTetronimo tetronimo_first playfield_first key
+        | Key.Down | Key.Left | Key.Right | Key.Up | Key.Space -> 
+                        if gameState = Game.Run then 
+                            if gameType = Game.Local then
+                                moveTetronimo tetronimo_second playfield_second key
+                            else
+                                moveTetronimo tetronimo_first playfield_first key
         | _ -> ()
 
     let renderFrame(e: FrameEventArgs) =
@@ -131,9 +137,13 @@ type GLWindow() as this =
             
             match gameType with
             | Game.AI ->    if elapsedTimeSecond >= tetronimo_second.Value.speed then
-                                    let move = Bot.getNextMove tetronimo_second playfield_second
-                                    do moveTetronimo tetronimo_second playfield_second move
-                                    elapsedTimeSecond <- 0.0
+                                let move = Bot.getNextMove tetronimo_second playfield_second
+                                moveTetronimo tetronimo_second playfield_second move
+                                elapsedTimeSecond <- 0.0
+            | Game.Local -> if elapsedTimeSecond >= tetronimo_second.Value.speed then 
+                                elapsedTimeSecond <- 0.0
+                                moveTetronimo tetronimo_second playfield_second Move.Down
+                            
             | _ -> ()
 
 

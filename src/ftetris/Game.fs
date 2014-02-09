@@ -6,7 +6,7 @@ type Type = Single | AI | Online | Local
 type State = Menu | Level | Run | Pause
 type Move = Left | Right | Down | Transpose | Drop | None | Pause
 
-let keyToCommand key =
+let keyToCommand game key =
     match key with
     | Key.Escape -> Pause
     | Key.Left | Key.A -> Move.Left
