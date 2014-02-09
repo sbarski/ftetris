@@ -51,7 +51,7 @@ let rec private updateBoard playfield y slices =
     match y with
     | [] -> playfield, slices
     | head :: tail -> 
-            let slice = playfield.field.[0..playfield.width-1, head..head] |> Seq.cast<space> |> Seq.toArray
+            let slice = playfield.field.[0..playfield.width-1, head] |> Seq.cast<space> |> Seq.toArray
 
             if slice |> Array.forall (fun x -> x = space.Occupied) then 
                 let top = playfield.field.[0..playfield.width-1, 0..head-1] //cut the top half (without the completed row)
