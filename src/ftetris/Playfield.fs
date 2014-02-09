@@ -12,20 +12,23 @@ open Tetronimo
 type space = Empty = 0 | Wall = 1 | Occupied = 2 | Filled = 3
 type playfield = {field: space[,]; list:int; width:int; height:int}
 
-let private buildList (displayListHandle:int) (width:int) (height:int) = 
+let private buildList (displayListHandle:int) (width:int) (height:int) (x:int) (y:int) = 
     GL.NewList(displayListHandle, ListMode.Compile)
     GL.Color3(Color.Green);
         
+    let x = Convert.ToDouble(x)
+    let y = Convert.ToDouble(y)
+
     for i = 0 to height do
         GL.Begin(PrimitiveType.Lines)
-        GL.Vertex2(0.0, Convert.ToDouble(i))
-        GL.Vertex2(Convert.ToDouble(width), Convert.ToDouble(i))
+        GL.Vertex2(x, Convert.ToDouble(i) + y)
+        GL.Vertex2(Convert.ToDouble(width) + x, Convert.ToDouble(i) + y)
         GL.End()
         
     for i = 0 to width do
         GL.Begin(PrimitiveType.Lines)
-        GL.Vertex2(Convert.ToDouble(i), 0.0)
-        GL.Vertex2(Convert.ToDouble(i), Convert.ToDouble(height))
+        GL.Vertex2(Convert.ToDouble(i) + x, y)
+        GL.Vertex2(Convert.ToDouble(i) + x, Convert.ToDouble(height) + y)
         GL.End()
 
     GL.EndList()
@@ -65,7 +68,8 @@ let rec private updateBoard playfield y slices =
                     Array2D.blit bottom 0 0 f 0 (head+1) (Array2D.length1 bottom) (Array2D.length2 bottom) //merge the bottom half in place
 
                 let score = slices + 1
-                updateBoard {field = f; list = playfield.list; width = playfield.width; height = playfield.height} tail score
+                let field = { playfield with field = f }
+                updateBoard field tail score
             else
                 let score = slices
                 updateBoard playfield tail score
@@ -94,8 +98,8 @@ let getNextPosition playfield tetronimo  =
 let savePosition tetronimo playfield =
     tetronimo.shape |> Array2D.iteri (fun x y e -> if e = 1 then playfield.field.[y + tetronimo.x, x + tetronimo.y] <- space.Occupied)
 
-let init displayListHandle width height =
-    let buildList = buildList displayListHandle width height
+let init displayListHandle width height x y =
+    let buildList = buildList displayListHandle width height x y
     {field = Array2D.zeroCreate<space> width height; list = displayListHandle; width = width; height = height}
 
 let restart playfield =

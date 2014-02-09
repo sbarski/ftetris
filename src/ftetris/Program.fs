@@ -9,6 +9,9 @@ open OpenTK.Input
 open Playfield
 open Tetronimo
 open Menu
+open Bot
+open Game
+open Graphics
 
 let defaultx = 4
 let defaulty = 0
@@ -16,89 +19,123 @@ let width = 10
 let height = 20
 
 type GLWindow() as this = 
-    inherit GameWindow(600, 800, GraphicsMode.Default)
+    inherit GameWindow(1200, 800, GraphicsMode.Default)
 
-    let gridList = 1
     let random = new Random()
 
-    let mutable playfield = Playfield.init gridList width height
-    let mutable tetronimo = Tetronimo.create random
-    let mutable elapsedTime = 0.0
+    let playfield_first = ref (Playfield.init 1 width height 0 0)
+    let playfield_second = ref (Playfield.init 2 width height 0 0)
+
+    let tetronimo_first = ref (Tetronimo.create random)
+    let tetronimo_second = ref (Tetronimo.create random)
+
+    let mutable elapsedTimeFirst = 0.0
+    let mutable elapsedTimeSecond = 0.0
     let mutable score = 0
-    let mutable isGameRunning = true
+    let mutable gameState = Game.Run
+    let mutable gameType = Game.Single
 
     let (display, attributes) = TextWriter.init this.Size (new Size(this.Width, 30)) "Score: 0" Brushes.White  
 
     let resize(e: EventArgs) = 
-        GL.Viewport(0, 0, this.Width, this.Height)
-        GL.MatrixMode(MatrixMode.Projection)
-        GL.LoadIdentity()
-
-        GL.Ortho(0.0, 10.0, 20.0, 0.0, -1.0, 1.0)
-        GL.MatrixMode(MatrixMode.Modelview)
-        GL.LoadIdentity()
+        Graphics.resizeLeftFrame this.Width this.Height gameType
+        Graphics.resizeRightFrame this.Width this.Height gameType
 
     let load(e: EventArgs) = 
         this.VSync <- VSyncMode.On
 
-    let updateGameState update =
-        if (fst update <> playfield) then
+    let updateGameState (tetronimo: ref<_>) (playfield: ref<_>) update =
+        let upd = (fst update)
 
-            playfield <- fst update
+        if (upd <> playfield.Value) then
+            playfield := upd
 
         score <- score + snd update
-        tetronimo <- Tetronimo.create random
+        tetronimo := Tetronimo.create random
 
         TextWriter.update display attributes ("Score: " + score.ToString())
 
-    let handleCollision key =
-        if (key <> Key.Left && key <> Key.Right) then
-            Playfield.savePosition tetronimo playfield //handle a normal collision
+    let handleCollision (tetronimo : ref<_>) (playfield : ref<_>)  (key:Move) =
+        if (key <> Move.Left && key <> Move.Right) then
+            Playfield.savePosition tetronimo.Value playfield.Value //handle a normal collision
                 
-            let y = tetronimo.shape |> Array2D.length1 |> fun size -> Array.init size (fun i -> i + tetronimo.y) |> Array.filter (fun x -> x < 20) |> Seq.toList
-            let update = Playfield.update playfield y
+            let y = tetronimo.Value.shape |> Array2D.length1 |> fun size -> Array.init size (fun i -> i + tetronimo.Value.y) |> Array.filter (fun x -> x < 20) |> Seq.toList
+            let update = Playfield.update playfield.Value y
             
-            updateGameState update
+            updateGameState tetronimo playfield update
 
     let restartGame message =
-        playfield <- Playfield.restart playfield
-        tetronimo <- Tetronimo.create random
+        playfield_first := Playfield.restart playfield_first.Value
+        playfield_second := Playfield.restart playfield_second.Value
+
+        tetronimo_first := Tetronimo.create random
+        tetronimo_second := Tetronimo.create random
+
         score <- 0
         
-    let moveTetronimo key =
-        let move = Tetronimo.move key tetronimo |> Playfield.getNextPosition playfield
+    let moveTetronimo (tetronimo : ref<_>) (playfield : ref<_>) (key:Move) =
+        let move = Tetronimo.move key tetronimo.Value |> Playfield.getNextPosition playfield.Value
         
         match move with
-        | (space.Empty, position) -> tetronimo <- position
-        | (space.Occupied, _) -> handleCollision key
-        | (space.Filled, _) -> restartGame ""
+        | (space.Empty, position) -> tetronimo := position
+        | (space.Occupied, _) -> handleCollision tetronimo playfield key
+        | (space.Filled, _) -> restartGame  ""
         | (space.Wall, _) -> ()  //do nothing and continue
         | _ -> () //handle impossible case
 
     let keyDown(e: KeyboardKeyEventArgs) = 
+        let key = Game.keyToCommand e.Key
+
         match e.Key with
-        | Key.Escape -> isGameRunning <- not isGameRunning
-        | Key.Down | Key.Left | Key.Right | Key.Up | Key.Space -> if isGameRunning then moveTetronimo e.Key
+        | Key.Escape -> match gameState with
+                        | Game.Run -> gameState <- Game.Pause
+                        | Game.Pause -> gameState <- Game.Run
+                        | _ -> ()
+        | Key.A | Key.D | Key.W | Key.S | Key.X -> if gameState = Game.Run then moveTetronimo tetronimo_first playfield_first key
+        | Key.Down | Key.Left | Key.Right | Key.Up | Key.Space -> if gameState = Game.Run then moveTetronimo tetronimo_second playfield_second key
         | _ -> ()
 
     let renderFrame(e: FrameEventArgs) =
         GL.Clear(ClearBufferMask.ColorBufferBit ||| ClearBufferMask.DepthBufferBit)
         GL.ClearColor(Color4.Black)
 
-        //Menu.draw width height Menu.Speed
-        Tetronimo.draw tetronimo
-        Playfield.draw playfield
-        TextWriter.draw display attributes this.Width this.Height
+        match gameState with
+        | Game.Menu -> Menu.draw width height Menu.Level
+        | Game.Run ->   
+                resizeLeftFrame this.Width this.Height gameType
+                Tetronimo.draw tetronimo_first.Value         
+                Playfield.draw playfield_first.Value
+                TextWriter.draw display attributes this.Width this.Height
+                
+                resizeRightFrame this.Width this.Height gameType
+                match gameType with
+                | Game.AI   -> 
+                                Tetronimo.draw tetronimo_second.Value
+                                Playfield.draw playfield_second.Value
+                | Game.Local ->  
+                                Tetronimo.draw tetronimo_second.Value
+                                Playfield.draw playfield_second.Value
+                | _ -> ()
+        | _ -> ()
 
         this.SwapBuffers()
 
     let updateFrame(e: FrameEventArgs) = 
-        elapsedTime <- elapsedTime + e.Time
+        elapsedTimeFirst <- elapsedTimeFirst + e.Time
+        elapsedTimeSecond <- elapsedTimeSecond + e.Time
 
-        if isGameRunning then
-            if elapsedTime >= tetronimo.speed then 
-                moveTetronimo Key.Down
-                elapsedTime <- 0.0
+        if gameState = Game.Run then
+            if elapsedTimeFirst >= tetronimo_first.Value.speed then 
+                elapsedTimeFirst <- 0.0
+                moveTetronimo tetronimo_first playfield_first Move.Down
+            
+            match gameType with
+            | Game.AI ->    if elapsedTimeSecond >= tetronimo_second.Value.speed then
+                                    let move = Bot.getNextMove tetronimo_second playfield_second
+                                    do moveTetronimo tetronimo_second playfield_second move
+                                    elapsedTimeSecond <- 0.0
+            | _ -> ()
+
 
     let mouseUp(e: MouseEventArgs) =
         System.Console.WriteLine("Position: " + e.Position.ToString() + ", x and y: " + e.X.ToString() + ", "+ e.Y.ToString())
