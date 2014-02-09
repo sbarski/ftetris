@@ -51,24 +51,24 @@ let rec private updateBoard playfield y slices =
     match y with
     | [] -> playfield, slices
     | head :: tail -> 
-        let slice = playfield.field.[0..playfield.width-1, head]
+            let slice = playfield.field.[0..playfield.width-1, head] |> Seq.cast<space> |> Seq.toArray
 
-        if slice |> Array.forall (fun x -> x = space.Occupied) then 
-            let top = playfield.field.[0..playfield.width-1, 0..head-1] //cut the top half (without the completed row)
-            let bottom = playfield.field.[0..playfield.width-1, head+1..playfield.height-1] //cut the second half (without the completed row)
-            let f = Array2D.zeroCreate<space> playfield.width playfield.height //create new array
+            if slice |> Array.forall (fun x -> x = space.Occupied) then 
+                let top = playfield.field.[0..playfield.width-1, 0..head-1] //cut the top half (without the completed row)
+                let bottom = playfield.field.[0..playfield.width-1, head+1..playfield.height-1] //cut the second half (without the completed row)
+                let f = Array2D.zeroCreate<space> playfield.width playfield.height //create new array
             
-            if top.Length > 0 then
-                Array2D.blit top 0 0 f 0 1 (Array2D.length1 top) (Array2D.length2 top) //merge the top half one row down
+                if top.Length > 0 then
+                    Array2D.blit top 0 0 f 0 1 (Array2D.length1 top) (Array2D.length2 top) //merge the top half one row down
 
-            if bottom.Length > 0 then
-                Array2D.blit bottom 0 0 f 0 (head+1) (Array2D.length1 bottom) (Array2D.length2 bottom) //merge the bottom half in place
+                if bottom.Length > 0 then
+                    Array2D.blit bottom 0 0 f 0 (head+1) (Array2D.length1 bottom) (Array2D.length2 bottom) //merge the bottom half in place
 
-            let score = slices + 1
-            updateBoard {field = f; list = playfield.list; width = playfield.width; height = playfield.height} tail score
-        else
-            let score = slices
-            updateBoard playfield tail score
+                let score = slices + 1
+                updateBoard {field = f; list = playfield.list; width = playfield.width; height = playfield.height} tail score
+            else
+                let score = slices
+                updateBoard playfield tail score
 
 let update playfield y =
     updateBoard playfield y 0
