@@ -33,7 +33,7 @@ type GLWindow() as this =
     let mutable elapsedTimeSecond = 0.0
     let mutable score = 0
     let mutable gameState = Game.Run
-    let mutable gameType = Game.AI
+    let mutable gameType = Game.Local
 
     let (display, attributes) = TextWriter.init this.Size (new Size(this.Width, 30)) "Score: 0" Brushes.White  
 
@@ -46,12 +46,22 @@ type GLWindow() as this =
 
     let updateGameState (tetronimo: ref<_>) (playfield: ref<_>) update =
         let upd = (fst update)
+        let rows = snd update
 
         if (upd <> playfield.Value) then
             playfield := upd
 
-        score <- score + snd update
+        score <- score + rows
         tetronimo := Tetronimo.create random
+
+        if rows > 0 then
+            match gameType with
+            | Type.Local | Type.AI -> 
+                                    if playfield = playfield_first then 
+                                        playfield_second := Playfield.addRows playfield_second.Value rows 
+                                    else 
+                                        playfield_first := Playfield.addRows playfield_first.Value rows
+            | _ -> ()
 
         TextWriter.update display attributes ("Score: " + score.ToString())
 

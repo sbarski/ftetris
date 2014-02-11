@@ -9,8 +9,12 @@ open OpenTK.Graphics.OpenGL
 
 open Tetronimo
 
-type space = Empty = 0 | Wall = 1 | Occupied = 2 | Filled = 3
-type playfield = {field: space[,]; list:int; width:int; height:int}
+type space = Empty = 0 | Wall = 1 | Occupied = 2 | Blocked = 3 | Filled = 4
+type cell = {space:space; color:Color}
+type playfield = {field: cell[,]; list:int; width:int; height:int}
+
+let private createEmptyField width height =
+    Array2D.init<cell> width height (fun i j -> {space = space.Empty; color = Color.Black})
 
 let private buildList (displayListHandle:int) (width:int) (height:int) (x:int) (y:int) = 
     GL.NewList(displayListHandle, ListMode.Compile)
@@ -33,7 +37,9 @@ let private buildList (displayListHandle:int) (width:int) (height:int) (x:int) (
 
     GL.EndList()
 
-let private drawPolygon (x:int) y =
+let private drawPolygon (x:int) y (color:Color) =
+    GL.Color3(color)
+
     GL.Begin(PrimitiveType.Quads)
     GL.Vertex2(x, y)
     GL.Vertex2(x, y + 1)
@@ -46,20 +52,20 @@ let private isEmptyCell playfield x y =
     | (x,y) when x < 0 -> space.Wall
     | (x,y) when x > playfield.width - 1 -> space.Wall
     | (x,y) when y > playfield.height - 1 -> space.Occupied
-    | (x,y) when playfield.field.[x,y] = space.Occupied && y < 2 -> space.Filled
-    | (x,y) when playfield.field.[x,y] = space.Occupied -> space.Occupied
+    | (x,y) when (playfield.field.[x,y].space = space.Occupied || playfield.field.[x,y].space = space.Blocked) && y < 2 -> space.Filled
+    | (x,y) when (playfield.field.[x,y].space = space.Occupied || playfield.field.[x,y].space = space.Blocked) -> space.Occupied
     | _ -> space.Empty
 
 let rec private updateBoard playfield y slices =
     match y with
     | [] -> playfield, slices
     | head :: tail -> 
-            let slice = playfield.field.[0..playfield.width-1, head] |> Seq.cast<space> |> Seq.toArray
+            let slice = playfield.field.[0..playfield.width-1, head..head] |> Seq.cast<cell> |> Seq.toArray
 
-            if slice |> Array.forall (fun x -> x = space.Occupied) then 
+            if slice |> Array.forall (fun x -> x.space = space.Occupied) then 
                 let top = playfield.field.[0..playfield.width-1, 0..head-1] //cut the top half (without the completed row)
                 let bottom = playfield.field.[0..playfield.width-1, head+1..playfield.height-1] //cut the second half (without the completed row)
-                let f = Array2D.zeroCreate<space> playfield.width playfield.height //create new array
+                let f = createEmptyField playfield.width playfield.height //create new array
             
                 if top.Length > 0 then
                     Array2D.blit top 0 0 f 0 1 (Array2D.length1 top) (Array2D.length2 top) //merge the top half one row down
@@ -74,13 +80,27 @@ let rec private updateBoard playfield y slices =
                 let score = slices
                 updateBoard playfield tail score
 
+
+
 let update playfield y =
     updateBoard playfield y 0
 
 let draw playfield = 
-    playfield.field |> Array2D.iteri (fun x y e -> if e = space.Occupied then drawPolygon x y)
+    GL.Color3(Color.AntiqueWhite)
+    playfield.field |> Array2D.iteri (fun x y e -> if e.space = space.Occupied || e.space = space.Blocked then drawPolygon x y e.color)
     GL.CallList(playfield.list)
+    
+let addRows playfield rows =
+    //cut the top slice
+    let f = createEmptyField playfield.width playfield.height
+    let top = playfield.field.[0..playfield.width-1, rows..playfield.height-1]
+    let bottom = Array2D.init<cell> playfield.width rows (fun i j -> {space = space.Blocked; color = Color.AntiqueWhite})
 
+    Array2D.blit top 0 0 f 0 0 (Array2D.length1 top) (Array2D.length2 top)
+    Array2D.blit bottom 0 0 f 0 (Array2D.length2 f - rows) (Array2D.length1 bottom) (Array2D.length2 bottom)
+
+    {field = f; list = playfield.list; width = playfield.width; height = playfield.height}
+     
 let getNextPosition playfield tetronimo  =
     let currentField = playfield.field |> Array2D.copy
     let mutable position = space.Empty
@@ -96,13 +116,13 @@ let getNextPosition playfield tetronimo  =
     (position, tetronimo)                           
 
 let savePosition tetronimo playfield =
-    tetronimo.shape |> Array2D.iteri (fun x y e -> if e = 1 then playfield.field.[y + tetronimo.x, x + tetronimo.y] <- space.Occupied)
+    tetronimo.shape |> Array2D.iteri (fun x y e -> if e = 1 then playfield.field.[y + tetronimo.x, x + tetronimo.y] <- {space = space.Occupied; color = tetronimo.colour})
 
 let init displayListHandle width height x y =
     let buildList = buildList displayListHandle width height x y
-    {field = Array2D.zeroCreate<space> width height; list = displayListHandle; width = width; height = height}
+    {field = createEmptyField width height; list = displayListHandle; width = width; height = height}
 
 let restart playfield =
     let width = playfield.width
     let height = playfield.height
-    {field = Array2D.zeroCreate<space> width height; list = playfield.list; width = width; height = height}
+    {field = createEmptyField width height; list = playfield.list; width = width; height = height}
