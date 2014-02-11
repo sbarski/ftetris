@@ -7,43 +7,45 @@ open OpenTK.Input
 open OpenTK.Graphics
 open OpenTK.Graphics.OpenGL
 
+open Game
+
 type Tetronimo = {shape: int[,]; colour:Color; x:int; y:int; speed:float}
 
-let private I = array2D [|
+let I = array2D [|
                         [|1; 1; 1; 1|]
                         [|0; 0; 0; 0|]
                         |]
 
-let private O = array2D [|
+let O = array2D [|
                         [|1; 1;|]
                         [|1; 1;|]
                         |]
 
-let private T = array2D [|
+let T = array2D [|
                         [|0; 1; 0|]
                         [|1; 1; 1|]
                         [|0; 0; 0|]
                         |]
 
-let private S = array2D [|
+let S = array2D [|
                         [|0; 1; 1|]
                         [|1; 1; 0|]
                         [|0; 0; 0|]
                         |]
 
-let private Z = array2D [|
+let Z = array2D [|
                         [|1; 1; 0|]
                         [|0; 1; 1|]
                         [|0; 0; 0|]
                         |]
 
-let private J = array2D [|
+let J = array2D [|
                         [|1; 0; 0|]
                         [|1; 1; 1|]
                         [|0; 0; 0|]
                         |]
 
-let private L = array2D [|
+let L = array2D [|
                         [|0; 0; 1|]
                         [|1; 1; 1|]
                         [|0; 0; 0|]
@@ -83,17 +85,20 @@ let draw tetromino =
     tetromino.shape |> Array2D.iteri (fun row column elem -> if elem = 1 then drawsquare (column + tetromino.x) (row + tetromino.y))
     GL.End()
 
+let createWith shape colour x y speed = 
+    {shape = shape; colour = colour; x = x; y = y; speed = speed}
+
 let create (random:Random) =
     let selection = random.Next(0, tetronimos.Length-1)
     let shape = tetronimos.[selection]
     let colour = colours.[selection]
     
-    {shape = shape; colour = colour; x = defaultX; y = defaultY; speed = speed}
+    createWith shape colour defaultX defaultY speed
 
-let move key tetromino = 
-     match key with
-     | Key.Left -> {shape = tetromino.shape; colour = tetromino.colour; x = tetromino.x - 1; y = tetromino.y; speed = tetromino.speed }
-     | Key.Right -> {shape = tetromino.shape; colour = tetromino.colour; x = tetromino.x + 1; y = tetromino.y; speed = tetromino.speed }
-     | Key.Down -> {shape = tetromino.shape; colour = tetromino.colour; x = tetromino.x; y = tetromino.y + 1; speed = tetromino.speed }
-     | Key.Space -> {shape = tetromino.shape; colour = tetromino.colour; x = tetromino.x; y = tetromino.y; speed = fastSpeed }
+let move move tetromino = 
+     match move with
+     | Move.Left -> {shape = tetromino.shape; colour = tetromino.colour; x = tetromino.x - 1; y = tetromino.y; speed = tetromino.speed }
+     | Move.Right -> {shape = tetromino.shape; colour = tetromino.colour; x = tetromino.x + 1; y = tetromino.y; speed = tetromino.speed }
+     | Move.Down -> {shape = tetromino.shape; colour = tetromino.colour; x = tetromino.x; y = tetromino.y + 1; speed = tetromino.speed }
+     | Move.Drop -> {shape = tetromino.shape; colour = tetromino.colour; x = tetromino.x; y = tetromino.y; speed = fastSpeed }
      | _ -> {shape = transpose tetromino.shape; colour = tetromino.colour; x = tetromino.x; y = tetromino.y; speed = tetromino.speed }
