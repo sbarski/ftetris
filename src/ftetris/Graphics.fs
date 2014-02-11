@@ -13,12 +13,14 @@ let resizeLeftFrame width height game =
     GL.MatrixMode(MatrixMode.Projection)
     GL.LoadIdentity()
     GL.Ortho(0.0, 10.0, 20.0, 0.0, -1.0, 1.0)
+    GL.Scale(0.8, 0.8, 0.0)
+    GL.Translate(1.0, 2.0, 0.0)
 
-    match game with
-    | Game.Local ->
-        GL.Scale(0.8, 0.8, 0.0)
-        GL.Translate(1.0, 2.0, 0.0)
-    | _ -> ()
+//    match game with
+//    | Game.Local ->
+//        GL.Scale(0.8, 0.8, 0.0)
+//        GL.Translate(1.0, 2.0, 0.0)
+//    | _ -> ()
 
     GL.MatrixMode(MatrixMode.Modelview)
     GL.LoadIdentity()   
