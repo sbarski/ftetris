@@ -18,7 +18,7 @@ let private createEmptyField width height =
 
 let private buildList (displayListHandle:int) (width:int) (height:int) (x:int) (y:int) = 
     GL.NewList(displayListHandle, ListMode.Compile)
-    GL.Color3(Color.Green);
+    GL.Color3(Color.Black);
         
     let x = Convert.ToDouble(x)
     let y = Convert.ToDouble(y)

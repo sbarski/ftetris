@@ -37,12 +37,15 @@ type GLWindow() as this =
 
     let (display, attributes) = TextWriter.init this.Size (new Size(this.Width, 30)) "Score: 0" Brushes.White  
 
+
     let resize(e: EventArgs) = 
         Graphics.resizeLeftFrame this.Width this.Height gameType
         Graphics.resizeRightFrame this.Width this.Height gameType
 
     let load(e: EventArgs) = 
         this.VSync <- VSyncMode.On
+
+        Graphics.load
 
     let updateGameState (tetronimo: ref<_>) (playfield: ref<_>) update =
         let upd = (fst update)
@@ -114,6 +117,8 @@ type GLWindow() as this =
     let renderFrame(e: FrameEventArgs) =
         GL.Clear(ClearBufferMask.ColorBufferBit ||| ClearBufferMask.DepthBufferBit)
         GL.ClearColor(Color4.Black)
+
+        Graphics.drawBackground this.Width this.Height
 
         match gameState with
         | Game.Menu -> Menu.draw width height Menu.Level
