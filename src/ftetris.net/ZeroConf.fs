@@ -32,7 +32,7 @@ let private serviceAdded (args:Mono.Zeroconf.ServiceBrowseEventArgs) =
 
 let init action =
     let port = 3689
-    let ip = System.Net.Dns.GetHostEntry(System.Net.Dns.GetHostName()).AddressList.[0].MapToIPv4()
+    let ip = System.Net.Dns.GetHostEntry(System.Net.Dns.GetHostName()).AddressList |> Array.find (fun x -> x.AddressFamily = AddressFamily.InterNetwork)
 
     match action with
     | Join ->     
@@ -41,7 +41,7 @@ let init action =
                 browser.ServiceAdded.Add(serviceAdded)
                 browser.Browse((uint32)0, Mono.Zeroconf.AddressProtocol.Any, "_daap._tcp", "local.")
     | Host -> 
-                let listener = Server.start System.Net.IPAddress.Loopback port
+                let listener = Server.start ip port
 
                 let service = new RegisterService()
                 service.Name <- "ftetris"
