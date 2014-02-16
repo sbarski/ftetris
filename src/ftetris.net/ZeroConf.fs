@@ -6,6 +6,7 @@ open Mono.Zeroconf.Providers
 open Mono.Zeroconf.Providers.Bonjour
 
 open System.Net.Sockets
+open ftetris.types
 
 type net = Join | Host
 type game = {ip:Net.IPAddress; port: int16; hostTarget: string}
@@ -13,6 +14,8 @@ type server = {ip:Net.IPAddress; port: int16; advertse:bool; bonjour: Mono.Zeroc
 
 let private browser = new ServiceBrowser()
 let private currentGames = ref (Array.zeroCreate<game> 0)
+
+let mutable (client:TcpClient) = null
 
 let private serviceResolved (args:Mono.Zeroconf.ServiceResolvedEventArgs) =
     let service = args.Service
@@ -30,18 +33,25 @@ let private serviceAdded (args:Mono.Zeroconf.ServiceBrowseEventArgs) =
     args.Service.Resolved.Add(serviceResolved)
     args.Service.Resolve()
 
+let send action playfield lines =
+    let network = {playfield = playfield; linesToRemove = lines}
+    
+    match action with 
+    | Join -> Client.send client network
+    | Host -> Server.send client network
+
 let init action =
     let port = 3689
     let ip = System.Net.Dns.GetHostEntry(System.Net.Dns.GetHostName()).AddressList |> Array.find (fun x -> x.AddressFamily = AddressFamily.InterNetwork)
 
     match action with
     | Join ->     
-                let client = Client.connect ip port
+                client = Client.connect ip port
 
                 browser.ServiceAdded.Add(serviceAdded)
                 browser.Browse((uint32)0, Mono.Zeroconf.AddressProtocol.Any, "_daap._tcp", "local.")
     | Host -> 
-                let listener = Server.start ip port
+                client <- Server.start ip port
 
                 let service = new RegisterService()
                 service.Name <- "ftetris"
