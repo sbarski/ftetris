@@ -6,6 +6,8 @@ open OpenTK.Graphics
 open OpenTK.Graphics.OpenGL
 open OpenTK.Input
 
+open ftetris.types
+
 open Playfield
 open Tetronimo
 open Menu
@@ -176,6 +178,14 @@ type GLWindow() as this =
 [<EntryPoint>]
 let main argv = 
     printfn "%A" argv
+
+    let options = Options.parseCommandLine (argv |> Array.toList)
+
+    match options with
+    | localNetworkOptions when options.localNetworkOptions = Options.LocalNetworkOption.Host -> ZeroConf.init ZeroConf.Host
+    | localNetworkOptions when options.localNetworkOptions = Options.LocalNetworkOption.Join -> ZeroConf.init ZeroConf.Join
+    | localNetworkOptions when options.localNetworkOptions = Options.LocalNetworkOption.None -> ()
+    | _ -> ()
 
     let game = new GLWindow()
     do game.Run(60.0)

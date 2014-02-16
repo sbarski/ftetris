@@ -5,14 +5,13 @@
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <SchemaVersion>2.0</SchemaVersion>
-    <ProjectGuid>e34ee419-11d3-4f8e-9732-03ca73bec392</ProjectGuid>
+    <ProjectGuid>857e00c7-bbdf-4718-9eb8-e4172ff3c484</ProjectGuid>
     <OutputType>Library</OutputType>
-    <RootNamespace>ftetris.net</RootNamespace>
-    <AssemblyName>ftetris.net</AssemblyName>
+    <RootNamespace>ftetris.debug</RootNamespace>
+    <AssemblyName>ftetris.debug</AssemblyName>
     <TargetFrameworkVersion>v4.5.1</TargetFrameworkVersion>
     <TargetFSharpCoreVersion>4.3.1.0</TargetFSharpCoreVersion>
-    <Name>ftetris.net</Name>
-    <TargetFrameworkProfile />
+    <Name>ftetris.debug</Name>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -22,7 +21,7 @@
     <OutputPath>bin\Debug\</OutputPath>
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <WarningLevel>3</WarningLevel>
-    <DocumentationFile>bin\Debug\ftetris.net.XML</DocumentationFile>
+    <DocumentationFile>bin\Debug\ftetris.debug.XML</DocumentationFile>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
@@ -31,15 +30,9 @@
     <OutputPath>bin\Release\</OutputPath>
     <DefineConstants>TRACE</DefineConstants>
     <WarningLevel>3</WarningLevel>
-    <DocumentationFile>bin\Release\ftetris.net.XML</DocumentationFile>
+    <DocumentationFile>bin\Release\ftetris.debug.XML</DocumentationFile>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="Mono.Zeroconf">
-      <HintPath>..\references\Mono.Zeroconf.dll</HintPath>
-    </Reference>
-    <Reference Include="Mono.Zeroconf.Providers.Bonjour">
-      <HintPath>..\references\Mono.Zeroconf.Providers.Bonjour.dll</HintPath>
-    </Reference>
     <Reference Include="mscorlib" />
     <Reference Include="FSharp.Core, Version=$(TargetFSharpCoreVersion), Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
       <Private>True</Private>
@@ -49,22 +42,7 @@
     <Reference Include="System.Numerics" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="DataConversion.fs" />
-    <Compile Include="Server.fs" />
-    <Compile Include="Client.fs" />
-    <Compile Include="ZeroConf.fs" />
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\ftetris.debug\ftetris.debug.fsproj">
-      <Name>ftetris.debug</Name>
-      <Project>{857e00c7-bbdf-4718-9eb8-e4172ff3c484}</Project>
-      <Private>True</Private>
-    </ProjectReference>
-    <ProjectReference Include="..\ftetris.types\ftetris.types.fsproj">
-      <Name>ftetris.types</Name>
-      <Project>{d828c54b-64e2-45a2-8f15-7f59da472c0c}</Project>
-      <Private>True</Private>
-    </ProjectReference>
+    <Compile Include="Debug.fs" />
   </ItemGroup>
   <PropertyGroup>
     <MinimumVisualStudioVersion Condition="'$(MinimumVisualStudioVersion)' == ''">11</MinimumVisualStudioVersion>

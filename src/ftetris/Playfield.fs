@@ -7,11 +7,9 @@ open OpenTK
 open OpenTK.Graphics
 open OpenTK.Graphics.OpenGL
 
-open Tetronimo
+open ftetris.types
 
-type space = Empty = 0 | Wall = 1 | Occupied = 2 | Blocked = 3 | Filled = 4
-type cell = {space:space; color:Color}
-type playfield = {field: cell[,]; list:int; width:int; height:int}
+open Tetronimo
 
 let private createEmptyField width height =
     Array2D.init<cell> width height (fun i j -> {space = space.Empty; color = Color.Black})
